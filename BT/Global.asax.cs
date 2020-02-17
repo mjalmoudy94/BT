@@ -16,6 +16,7 @@ namespace BT
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            Trader.BT.Start();
         }
     }
 }
