@@ -37,7 +37,7 @@ namespace BT
 
                 client.SubscribeToKlineUpdatesAsync("BCHUSDT", KlineInterval.OneMinute , (data) =>
                 {
-                    TBot.broadcastMessage(data.Data.Volume.ToString(new CultureInfo("en-US")));
+                    KlineUpdate(data);
                 });
             }
         }
@@ -47,6 +47,11 @@ namespace BT
         static void TickerUpdate(BinanceStreamTick data)
         {
             TBot.broadcastMessage(data.WeightedAverage.ToString("C", new CultureInfo("en-US")));
+        }
+        //
+        static void KlineUpdate(BinanceStreamKlineData data)
+        {
+            TBot.broadcastMessage(data.Data.Volume.ToString(new CultureInfo("en-US")));
         }
         //
 
