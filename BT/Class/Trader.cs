@@ -8,12 +8,15 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using BT.Model;
+using System.Net.Http;
+using System.Timers;
 
 namespace BT
 {
     public static class Trader
     {
         public static List<BinanceStreamTick> PriceList = new List<BinanceStreamTick>();
+        private static System.Timers.Timer aTimer;
         //
         //
         //
@@ -40,6 +43,18 @@ namespace BT
                 //    TBot.broadcastMessage(data.Data.Volume.ToString(new CultureInfo("en-US")));
                 //});
             }
+            // Create a timer with a two second interval.
+            aTimer = new System.Timers.Timer(20000);
+            // Hook up the Elapsed event for the timer. 
+            aTimer.Elapsed += WakeIIsUpAsync;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+        //
+        static  void WakeIIsUpAsync(Object source, ElapsedEventArgs e)
+        {
+            HttpClient client = new HttpClient();
+            var response = client.GetStringAsync("http://www.artacloud.ir");
         }
         //
         static void AddNewPrice(BinanceStreamTick data)
