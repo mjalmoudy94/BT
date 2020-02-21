@@ -12,6 +12,7 @@ namespace BT.Model
         public decimal MinPrice { get; set; }
         public decimal AveragePrice { get; set; }
         public decimal ChangeRange { get; set; }
+        public int PeriodInSec { get; set; }
         ////
         public AnalyzeInfo()
         {
@@ -20,6 +21,7 @@ namespace BT.Model
             MinPrice = 0;
             AveragePrice = 0;
             ChangeRange = 0;
+            PeriodInSec = 0;
         }
     }
 }
