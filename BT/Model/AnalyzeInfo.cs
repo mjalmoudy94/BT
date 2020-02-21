@@ -5,7 +5,7 @@ using System.Web;
 
 namespace BT.Model
 {
-    class AnalyzeInfo
+    public class AnalyzeInfo
     {
         public decimal CurrentPrice { get; set; }
         public decimal MaxPrice { get; set; }

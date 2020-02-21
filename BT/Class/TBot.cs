@@ -22,12 +22,17 @@ namespace BT
         //
         //
         //
-        public static void broadcastMessage(string MSG)
+        static decimal lastBroudCastPrice = 0;
+        public static void broadcastMessage(string MSG , decimal DefValue = 0)
         {
+            var CurrentPrice = Trader.MathAnalyze(1).CurrentPrice;
+            if (Math.Abs(lastBroudCastPrice - CurrentPrice) < DefValue) return;
+            //
             foreach (var userID in UsersID)
             {
                 telegram.SendTextMessageAsync(new ChatId(userID), MSG);
             }
+            lastBroudCastPrice = CurrentPrice;
         }
     }
 }
