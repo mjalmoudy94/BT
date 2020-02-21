@@ -14,7 +14,7 @@ namespace BT
         private static List<string> UsersID = new List<string>
         {
             "78649634"
-            //,"485736315"
+            ,"485736315"
         };
         private static string Token = "992031045:AAEYQvxujIKOlMHWesz_JzoYKCBzq1UoXh4";
         //

@@ -92,8 +92,8 @@ namespace BT
         //
         //
         //
-        static decimal ValueInUSD = 200;
-        static decimal ValueInCrypto = 0;
+        static decimal ValueInUSD = 0;
+        static decimal ValueInCrypto = 1;
         static decimal LockedPrice = 0;
         static decimal LastTradePrice = 0;
         static void tradeAnalyze()
@@ -101,12 +101,43 @@ namespace BT
             //AnalyzeInfo infoOf3600 = MathAnalyze(3600);
             AnalyzeInfo infoOf1800 = MathAnalyze(1800);
 
-            if (ValueInUSD > (ValueInCrypto * infoOf1800.CurrentPrice))
+            if (ValueInUSD < (ValueInCrypto * infoOf1800.CurrentPrice))
             {
-                // start to lock on buy
+                // start to lock on sell
                 if (LockedPrice == 0 &&
                     infoOf1800.CurrentPrice - LastTradePrice > 10 &&
                     (infoOf1800.MaxPrice < infoOf1800.CurrentPrice))
+                {
+                    TBot.broadcastMessage("start lock on sell: $" + infoOf1800.CurrentPrice);
+                    LockedPrice = infoOf1800.CurrentPrice;
+                }
+
+                // update lock on sell
+                if (LockedPrice > 0 &&
+                    infoOf1800.CurrentPrice > LockedPrice)
+                {
+                    TBot.broadcastMessage("update lock on sell: $" + infoOf1800.CurrentPrice);
+                    LockedPrice = infoOf1800.CurrentPrice;
+                }
+
+                // sell
+                if (LockedPrice > 0 &&
+                    (LockedPrice - infoOf1800.CurrentPrice) > 3)
+                {
+                    TBot.broadcastMessage("sell On: $" + infoOf1800.CurrentPrice);
+                    LockedPrice = 0;
+                    ValueInUSD = ValueInCrypto * infoOf1800.CurrentPrice;
+                    ValueInCrypto = 0;
+                    
+                }
+
+            }
+            else
+            {
+                // start to lock on buy
+                if (LockedPrice == 0 &&
+                    LastTradePrice - infoOf1800.CurrentPrice > 10 &&
+                    (infoOf1800.MinPrice > infoOf1800.CurrentPrice))
                 {
                     TBot.broadcastMessage("start lock on buy: $" + infoOf1800.CurrentPrice);
                     LockedPrice = infoOf1800.CurrentPrice;
@@ -114,7 +145,7 @@ namespace BT
 
                 // update lock on buy
                 if (LockedPrice > 0 &&
-                    infoOf1800.CurrentPrice > LockedPrice)
+                    infoOf1800.CurrentPrice < LockedPrice)
                 {
                     TBot.broadcastMessage("update lock on buy: $" + infoOf1800.CurrentPrice);
                     LockedPrice = infoOf1800.CurrentPrice;
@@ -122,42 +153,12 @@ namespace BT
 
                 // buy
                 if (LockedPrice > 0 &&
-                    (LockedPrice - infoOf1800.CurrentPrice) > 3)
-                {
-                    TBot.broadcastMessage("buy On: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = 0;
-                    ValueInCrypto = ValueInUSD / infoOf1800.CurrentPrice;
-                    ValueInUSD = 0;
-                }
-
-            }
-            else
-            {
-                // start to lock on Sell
-                if (LockedPrice == 0 &&
-                    LastTradePrice - infoOf1800.CurrentPrice > 10 &&
-                    (infoOf1800.MinPrice > infoOf1800.CurrentPrice))
-                {
-                    TBot.broadcastMessage("start lock on Sell: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
-
-                // update lock on Sell
-                if (LockedPrice > 0 &&
-                    infoOf1800.CurrentPrice < LockedPrice)
-                {
-                    TBot.broadcastMessage("update lock on Sell: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
-
-                // Sell
-                if (LockedPrice > 0 &&
                     (infoOf1800.CurrentPrice - LockedPrice) > 3)
                 {
                     TBot.broadcastMessage("sell On: $" + infoOf1800.CurrentPrice);
                     LockedPrice = 0;
-                    ValueInUSD = ValueInCrypto * infoOf1800.CurrentPrice;
-                    ValueInCrypto = 0;
+                    ValueInCrypto = ValueInUSD / infoOf1800.CurrentPrice;
+                    ValueInUSD = 0;
                 }
             }
 
