@@ -16,7 +16,7 @@ namespace BT
         private static List<string> UsersID = new List<string>
         {
             "78649634"
-            //,"485736315"
+            ,"485736315"
         };
         private static string Token = "992031045:AAEYQvxujIKOlMHWesz_JzoYKCBzq1UoXh4";
         //
@@ -32,9 +32,11 @@ namespace BT
             //
             if (info != null)
             {
+                Message.Append("**********\n");
                 Message.Append("Wallet USDT:" + (float)Trader.ValueInUSD + "\n");
                 Message.Append("Wallet Crypto:" + (float)Trader.ValueInCrypto + "\n");
                 Message.Append("Value of Wallet:" + (float)(Trader.ValueInUSD + (Trader.ValueInCrypto * info.CurrentPrice)) + "\n");
+                Message.Append("**********\n");
                 if (info.PeriodInSec < 3600)
                 {
                     Message.Append(info.PeriodInSec / 60 + " minute's\n");
@@ -47,7 +49,8 @@ namespace BT
                 Message.Append("MIN: $" + (float)info.MinPrice + "\n");
                 Message.Append("RANGE: $" + (float)info.ChangeRange + "\n");
                 Message.Append("Average: $" + (float)info.AveragePrice + "\n");
-                Message.Append("NOW: [[ $" + (float)info.CurrentPrice + " ]]");
+                Message.Append("**********\n");
+                Message.Append("NOW: $" + (float)info.CurrentPrice);
                 //
                 if (Math.Abs(info.CurrentPrice - lastBroudCastPrice) < ChangeRange) return;
                 //

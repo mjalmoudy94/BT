@@ -126,7 +126,7 @@ namespace BT
 
             if (LockedOnBuyPrice)
             {
-                TBot.broadcastMessage("Locked in buy: $" + LockedBuyPrice + "\n", infoOf1800, 1);
+                TBot.broadcastMessage("Locked in buy: $" + (float)LockedBuyPrice + "\n", infoOf1800, 1);
                 if ((data.CurrentDayClosePrice - LockedBuyPrice) > 2)
                 {
                     ValueInCrypto += ((ValueInUSD / 2) / data.CurrentDayClosePrice);
@@ -137,11 +137,15 @@ namespace BT
                     //
                     TBot.broadcastMessage("Buy: $" + (float)(ValueInUSD), infoOf1800, 0);
                 }
+                else if (data.CurrentDayClosePrice < LockedBuyPrice)
+                {
+                    LockedBuyPrice = data.CurrentDayClosePrice;
+                }
             }
 
             if (LockedOnSellPrice)
             {
-                TBot.broadcastMessage("Locked in Sell: " + LockedSellPrice + "\n", infoOf1800, 1);
+                TBot.broadcastMessage("Locked in Sell: " + (float)LockedSellPrice + "\n", infoOf1800, 1);
                 if ((LockedSellPrice - data.CurrentDayClosePrice) > 2)
                 {
                     ValueInUSD += ((ValueInCrypto / 2) * data.CurrentDayClosePrice);
@@ -152,8 +156,11 @@ namespace BT
                     //
                     TBot.broadcastMessage("Sell: $" + (float)(ValueInCrypto * data.CurrentDayClosePrice), infoOf1800, 0);
                 }
+                else if (data.CurrentDayClosePrice > LockedSellPrice)
+                {
+                    LockedSellPrice = data.CurrentDayClosePrice;
+                }
             }
-
         }
 
     }
