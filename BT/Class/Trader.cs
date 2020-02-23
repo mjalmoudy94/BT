@@ -8,12 +8,15 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using BT.Model;
+using System.Net.Http;
+using System.Timers;
 
 namespace BT
 {
     public static class Trader
     {
         public static List<BinanceStreamTick> PriceList = new List<BinanceStreamTick>();
+        private static System.Timers.Timer aTimer;
         //
         //
         //
@@ -27,12 +30,13 @@ namespace BT
         static void init()
         {
             //
+            TBot.broadcastMessage("started");
             using (var client = new BinanceSocketClient())
             {
                 client.SubscribeToSymbolTickerUpdatesAsync("BCHUSDT", (data) =>
                 {
                     AddNewPrice(data);
-                    tradeAnalyze();
+                    tradeAnalyze(data);
                 });
 
                 // client.SubscribeToKlineUpdatesAsync("BCHUSDT", KlineInterval.OneMinute, (data) =>
@@ -40,32 +44,36 @@ namespace BT
                 //    TBot.broadcastMessage(data.Data.Volume.ToString(new CultureInfo("en-US")));
                 //});
             }
+            // Create a timer with a two second interval.
+            aTimer = new System.Timers.Timer(20000);
+            // Hook up the Elapsed event for the timer. 
+            aTimer.Elapsed += WakeIIsUpAsync;
+            aTimer.AutoReset = true;
+            aTimer.Enabled = true;
+        }
+        //
+        static void WakeIIsUpAsync(Object source, ElapsedEventArgs e)
+        {
+            HttpClient client = new HttpClient();
+            var response = client.GetStringAsync("http://www.artacloud.ir");
         }
         //
         static void AddNewPrice(BinanceStreamTick data)
         {
             PriceList.Add(data);
-            //
-            if (PriceList.Count > 36000)
-            {
-                PriceList.RemoveAt(0);
-            }
-            //
-            if ((PriceList.Count % 1000) == 0)
-            {
-                TBot.broadcastMessage("PriceList Count :" + PriceList.Count);
-            }
         }
         //
-        static AnalyzeInfo MathAnalyze(int PeriodInSec)
+        public static AnalyzeInfo MathAnalyze(int PeriodInSec)
         {
             AnalyzeInfo mathAnalyzeInfo = new AnalyzeInfo();
             //
+            mathAnalyzeInfo.CurrentPrice = PriceList.LastOrDefault().CurrentDayClosePrice;
+            mathAnalyzeInfo.PeriodInSec = PeriodInSec;
+            //
             if (PriceList.Count > PeriodInSec)
             {
-                var CuttedPriceList = PriceList.GetRange((int)(PriceList.Count - PeriodInSec), (int)PeriodInSec - 1);
+                var CuttedPriceList = PriceList.GetRange((int)(PriceList.Count - PeriodInSec - 1), (int)PeriodInSec);
                 //
-                mathAnalyzeInfo.CurrentPrice = PriceList.LastOrDefault().CurrentDayClosePrice;
                 mathAnalyzeInfo.MaxPrice = CuttedPriceList.Max(p => p.CurrentDayClosePrice);
                 mathAnalyzeInfo.MinPrice = CuttedPriceList.Min(p => p.CurrentDayClosePrice);
                 mathAnalyzeInfo.AveragePrice = CuttedPriceList.Sum(p => p.CurrentDayClosePrice) / CuttedPriceList.Count;
@@ -77,75 +85,76 @@ namespace BT
         //
         //
         //
-        static decimal ValueInUSD = 200;
-        static decimal ValueInCrypto = 0;
-        static decimal LockedPrice = 0;
-        static decimal LastTradePrice = 0;
-        static void tradeAnalyze()
+        public static decimal ValueInUSD = 100;
+        public static decimal ValueInCrypto = 0.2M;
+        static bool LockedOnSellPrice = false;
+        static decimal LockedSellPrice = 0;
+        static decimal LastSellPrice = 0;
+        static bool LockedOnBuyPrice = false;
+        static decimal LockedBuyPrice = 0;
+        static decimal LastBuyPrice = 0;
+        static void tradeAnalyze(BinanceStreamTick data)
         {
-            //AnalyzeInfo infoOf3600 = MathAnalyze(3600);
-            AnalyzeInfo infoOf1800 = MathAnalyze(1800);
-
-            if (ValueInUSD > (ValueInCrypto * infoOf1800.CurrentPrice))
+            if (LastSellPrice == 0)
             {
-                // start to lock on buy
-                if (LockedPrice == 0 &&
-                    infoOf1800.CurrentPrice - LastTradePrice > 10 &&
-                    (infoOf1800.MaxPrice < infoOf1800.CurrentPrice))
-                {
-                    TBot.broadcastMessage("start lock on buy: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
-
-                // update lock on buy
-                if (LockedPrice > 0 &&
-                    infoOf1800.CurrentPrice > LockedPrice)
-                {
-                    TBot.broadcastMessage("update lock on buy: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
-
-                // buy
-                if (LockedPrice > 0 &&
-                    (LockedPrice - infoOf1800.CurrentPrice) > 3)
-                {
-                    TBot.broadcastMessage("buy On: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = 0;
-                    ValueInCrypto = ValueInUSD / infoOf1800.CurrentPrice;
-                    ValueInUSD = 0;
-                }
-
+                LastSellPrice = data.CurrentDayClosePrice;
+                LastBuyPrice = data.CurrentDayClosePrice;
             }
-            else
+
+            //AnalyzeInfo infoOf3600 = MathAnalyze(3600);
+            AnalyzeInfo infoOf1800 = MathAnalyze(3600 * 6);
+            TBot.broadcastMessage("NEW PRICE :" + (int)data.CurrentDayClosePrice, infoOf1800, 2);
+            //
+            //
+            if (!LockedOnBuyPrice &&
+                ValueInUSD > 11 &&
+                (LastSellPrice - data.CurrentDayClosePrice) > 10)
             {
-                // start to lock on Sell
-                if (LockedPrice == 0 &&
-                    LastTradePrice - infoOf1800.CurrentPrice > 10 &&
-                    (infoOf1800.MinPrice > infoOf1800.CurrentPrice))
-                {
-                    TBot.broadcastMessage("start lock on Sell: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
+                LockedOnBuyPrice = true;
+                LockedBuyPrice = data.CurrentDayClosePrice;
+                TBot.broadcastMessage("Lock On Buy\n", infoOf1800, 0);
+            }
 
-                // update lock on Sell
-                if (LockedPrice > 0 &&
-                    infoOf1800.CurrentPrice < LockedPrice)
-                {
-                    TBot.broadcastMessage("update lock on Sell: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = infoOf1800.CurrentPrice;
-                }
+            if (!LockedOnSellPrice &&
+                (data.CurrentDayClosePrice * ValueInCrypto) > 11 &&
+                (data.CurrentDayClosePrice - LastBuyPrice) > 10)
+            {
+                LockedOnSellPrice = true;
+                LockedSellPrice = data.CurrentDayClosePrice;
+                TBot.broadcastMessage("Lock On Sell\n", infoOf1800, 0);
+            }
 
-                // Sell
-                if (LockedPrice > 0 &&
-                    (infoOf1800.CurrentPrice - LockedPrice) > 3)
+            if (LockedOnBuyPrice)
+            {
+                TBot.broadcastMessage("Locked in buy: $" + LockedBuyPrice + "\n", infoOf1800, 1);
+                if ((data.CurrentDayClosePrice - LockedBuyPrice) > 2)
                 {
-                    TBot.broadcastMessage("sell On: $" + infoOf1800.CurrentPrice);
-                    LockedPrice = 0;
-                    ValueInUSD = ValueInCrypto * infoOf1800.CurrentPrice;
-                    ValueInCrypto = 0;
+                    ValueInCrypto += ((ValueInUSD / 2) / data.CurrentDayClosePrice);
+                    ValueInUSD -= (ValueInUSD / 2);
+                    LockedOnBuyPrice = false;
+                    LastBuyPrice = LockedBuyPrice;
+                    LockedBuyPrice = 0;
+                    //
+                    TBot.broadcastMessage("Buy: $" + (float)(ValueInUSD), infoOf1800, 0);
+                }
+            }
+
+            if (LockedOnSellPrice)
+            {
+                TBot.broadcastMessage("Locked in Sell: " + LockedSellPrice + "\n", infoOf1800, 1);
+                if ((LockedSellPrice - data.CurrentDayClosePrice) > 2)
+                {
+                    ValueInUSD += ((ValueInCrypto / 2) * data.CurrentDayClosePrice);
+                    ValueInCrypto -= ValueInCrypto / 2;
+                    LastSellPrice = LockedSellPrice;
+                    LockedSellPrice = 0;
+                    LockedOnSellPrice = false;
+                    //
+                    TBot.broadcastMessage("Sell: $" + (float)(ValueInCrypto * data.CurrentDayClosePrice), infoOf1800, 0);
                 }
             }
 
         }
+
     }
 }

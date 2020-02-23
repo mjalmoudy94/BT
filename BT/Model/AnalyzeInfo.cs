@@ -5,13 +5,14 @@ using System.Web;
 
 namespace BT.Model
 {
-    class AnalyzeInfo
+    public class AnalyzeInfo
     {
         public decimal CurrentPrice { get; set; }
         public decimal MaxPrice { get; set; }
         public decimal MinPrice { get; set; }
         public decimal AveragePrice { get; set; }
         public decimal ChangeRange { get; set; }
+        public int PeriodInSec { get; set; }
         ////
         public AnalyzeInfo()
         {
@@ -20,6 +21,7 @@ namespace BT.Model
             MinPrice = 0;
             AveragePrice = 0;
             ChangeRange = 0;
+            PeriodInSec = 0;
         }
     }
 }
