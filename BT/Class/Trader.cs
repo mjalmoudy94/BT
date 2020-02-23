@@ -108,6 +108,7 @@ namespace BT
             //
             if (!LockedOnBuyPrice &&
                 ValueInUSD > 11 &&
+                LastBuyPrice > data.CurrentDayClosePrice &&
                 (LastSellPrice - data.CurrentDayClosePrice) > 10)
             {
                 LockedOnBuyPrice = true;
@@ -117,6 +118,7 @@ namespace BT
 
             if (!LockedOnSellPrice &&
                 (data.CurrentDayClosePrice * ValueInCrypto) > 11 &&
+                LastSellPrice < data.CurrentDayClosePrice &&
                 (data.CurrentDayClosePrice - LastBuyPrice) > 10)
             {
                 LockedOnSellPrice = true;
